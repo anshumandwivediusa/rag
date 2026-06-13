@@ -80,7 +80,7 @@ The model breaks the sentence into tokens:
 Each token now goes through many Transformer layers.
 
 
-### ⭐ Step 2 — Passing Tokens Through Neural Layers  
+### Step 2 — Passing Tokens Through Neural Layers  
 Inside each layer, the model performs two key operations:
 
 #### **A. Self‑Attention (understanding relationships)**  
@@ -99,7 +99,7 @@ Example attention behavior:
 This is how the model learns **relationships**.
 
 
-### **B. Feed‑Forward Networks (building meaning)**  
+#### **B. Feed‑Forward Networks (building meaning)**  
 Each token is transformed into a richer representation that encodes:
 
 - **semantics** (meaning of the word)  
@@ -115,7 +115,7 @@ For example:
 
 These are called **hidden representations**.
 
-## Step 3 — Final Embedding (Compression of Understanding)
+### Step 3 — Final Embedding (Compression of Understanding)
 
 After many layers, the model combines all token representations into **one final vector**:
 
@@ -147,8 +147,6 @@ At the end, all teachers combine their notes into **one summary vector**.
 
 That summary is the **embedding**.
 
-## **One‑Sentence Summary**
+## **Summary**
 > **Embeddings are numerical representations of meaning that allow AI systems to compare, search, retrieve, and reason about data based on semantic similarity.**
-
-# One‑Sentence Summary  
 > The embedding model passes each token through many neural layers that learn meaning, context, relationships, and intent, then compresses all that understanding into a single vector that represents the entire text.
