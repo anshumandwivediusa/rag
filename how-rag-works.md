@@ -6,87 +6,123 @@ They are stored in **two parts**:
 1. **The original document text** (PDF text, paragraph, FAQ, etc.)  
 2. **The embedding vector** (a numerical representation used only for search)
 
+## **1. Step 1 — Create Embeddings Using a Text Embedding Model**
 
-## **Step 1 — You store BOTH the text and the embedding in Postgres**
-A typical pgvector table looks like this:
+Assume we use a **text‑embedding model** such as:
 
-| id | document_text | embedding_vector |
-|----|----------------|------------------|
-| 1  | "Factory reset steps..." | [0.12, -0.44, ...] |
-| 2  | "Battery troubleshooting..." | [0.88, 0.02, ...] |
+- **text‑embedding‑3‑large**  
+- **sentence‑transformers**  
+- **InstructorXL embeddings**  
 
-So the **text is still there**.  
-The embedding is just an *extra column* used for similarity search.
+These models convert text into **high‑dimensional vectors** (e.g., 768 or 1024 dimensions).
 
----
+Example document:
 
-## Step 2 — Query is converted into an embedding  
-Your query:
+```
+"To factory reset the TechCare X15 laptop, press F11 during boot and select 'System Recovery'."
+```
+
+Embedding output (shortened):
+
+```
+[0.12, -0.44, 0.91, -0.02, 0.55, ...]
+```
+
+## **2. Step 2 — Store Documents + Embeddings in Postgres**
+
+### **Postgres Table (Real Example)**
+
+```sql
+CREATE TABLE techcare_docs (
+    id SERIAL PRIMARY KEY,
+    document_text TEXT,
+    metadata JSONB,
+    embedding_vector VECTOR(768)  -- depends on embedding model dimension
+);
+```
+
+### **Insert Example Rows**
+
+| id | document_text | metadata | embedding_vector |
+|----|---------------|----------|------------------|
+| 1 | "To factory reset the TechCare X15 laptop, press F11 during boot and select 'System Recovery'." | {"category": "reset", "device": "X15"} | `[0.12, -0.44, 0.91, -0.02, ...]` |
+| 2 | "If your battery drains quickly, update the BIOS and reduce screen brightness to 60%." | {"category": "battery", "device": "X15"} | `[0.88, 0.02, 0.55, -0.31, ...]` |
+| 3 | "The TechCare X15 supports up to 32GB RAM. Use DDR4 3200MHz modules for best performance." | {"category": "hardware", "device": "X15"} | `[0.03, -0.91, 0.14, 0.77, ...]` |
+
+
+## **3. Step 3 — User Query → Embedding**
+
+User asks:
 
 > “How do I reset my TechCare X15 laptop”
 
-becomes a vector like:
+Embedding model produces a vector:
 
-\[
-[0.11, -0.52, 0.77, \dots]
-\]
-
----
-
-## Step 3 — Postgres searches ONLY the embedding column  
-Postgres finds the **closest vectors** using cosine similarity.
-
-It returns the **rows**, not just the vectors.
-
-So the result includes:
-
-- the document ID  
-- the original text  
-- metadata  
-- and the embedding (if needed)
-
----
-
-## Step 4 — The system pulls the original text  
-Once Postgres returns the matching rows, the system extracts:
-
-- **document_text**  
-- **title**  
-- **sections**  
-- **metadata**
-
-This is the content fed into the LLM.
-
-**The model NEVER reads the embedding.**  
-It only reads the **original text** stored alongside the embedding.
-
----
-
-## ⭐ Real‑World Example (Very Clear)
-
-### **Stored in Postgres**
 ```
-id: 1
-document_text: "To factory reset the X15, press F11 during boot..."
-embedding_vector: [0.12, -0.44, 0.91, ...]
+[0.11, -0.52, 0.77, 0.01, ...]
 ```
 
-### **User query → embedding → similarity search**
+This is the **query embedding**.
 
-Postgres returns row 1 because its embedding is closest.
 
-### **System extracts:**
+## **4. Step 4 — Similarity Search in Postgres**
+
+We now search for the closest documents using **cosine similarity**.
+
+```sql
+SELECT id, document_text, metadata
+FROM techcare_docs
+ORDER BY embedding_vector <-> '[0.11, -0.52, 0.77, 0.01, ...]'
+LIMIT 3;
 ```
-"To factory reset the X15, press F11 during boot..."
+
+Postgres returns:
+
+| id | document_text | metadata |
+|----|---------------|----------|
+| **1** | "To factory reset the TechCare X15 laptop..." | {"category": "reset"} |
+| 3 | "The TechCare X15 supports up to 32GB RAM..." | {"category": "hardware"} |
+| 2 | "If your battery drains quickly..." | {"category": "battery"} |
+
+Document **1** is the closest match.
+
+## **5. Step 5 — Build Context for the LLM**
+
+We take the top documents and build a context block:
+
+```
+Relevant Document 1:
+"To factory reset the TechCare X15 laptop, press F11 during boot..."
+
+Relevant Document 2:
+"The TechCare X15 supports up to 32GB RAM..."
+
+Relevant Document 3:
+"If your battery drains quickly..."
 ```
 
-### **LLM uses this text to answer.**
+## **6. Step 6 — LLM Generates the Final Answer**
 
----
+The model uses the retrieved context to answer:
 
-# ⭐ One‑Sentence Summary  
+> To reset your TechCare X15 laptop, restart the device and press F11 during boot to enter System Recovery. Select “Factory Reset” and follow the on‑screen instructions.
+
+This answer is **grounded** in the retrieved documents.
+
+
+## **7. Full Pipeline Summary**
+
+| Step | What Happens | Why It Matters |
+|------|--------------|----------------|
+| **Query Encoding** | Convert user text → embedding | Enables semantic search |
+| **Vector Search** | Postgres finds closest documents | Retrieves relevant knowledge |
+| **Context Fusion** | Combine query + documents | Gives LLM real evidence |
+| **Generation** | LLM produces grounded answer | Reduces hallucinations |
+
+
+## **One‑Sentence Summary**
+
+> A text‑embedding model converts both documents and queries into vectors, Postgres (pgvector) finds the closest matches, and the LLM uses the retrieved text—not the embeddings—to generate accurate, grounded answers.
+
+## ⭐ One‑Sentence Summary  
 > Documents are stored normally; embeddings are stored alongside them. The system searches using embeddings but retrieves the original text, which is then passed to the model.
-
----
-
-If you want, I can also show you a **sample Postgres schema**, a **full RAG pipeline diagram**, or a **step‑by‑step code example** using pgvector.
