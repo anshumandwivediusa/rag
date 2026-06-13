@@ -120,9 +120,6 @@ This answer is **grounded** in the retrieved documents.
 | **Generation** | LLM produces grounded answer | Reduces hallucinations |
 
 
-## **One‑Sentence Summary**
+## **Sentence Summary**
 
 > A text‑embedding model converts both documents and queries into vectors, Postgres (pgvector) finds the closest matches, and the LLM uses the retrieved text—not the embeddings—to generate accurate, grounded answers.
-
-## ⭐ One‑Sentence Summary  
-> Documents are stored normally; embeddings are stored alongside them. The system searches using embeddings but retrieves the original text, which is then passed to the model.
