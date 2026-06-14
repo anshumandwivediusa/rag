@@ -1,6 +1,7 @@
-| Technique | Description | Why Use It | Pros | Cons |
-| --- | --- | --- | --- | --- |
-| **[Naive RAG](ca://s?q=Explain_Naive_RAG)** | Basic RAG: embed → retrieve → answer. | Simple apps, prototypes, small datasets. | Easy to build; fast; low cost. | Retrieval quality is limited; struggles with vague queries. |
+| Technique | Description | Why Use It | Pros | Cons | Example |
+| --- | --- | --- | --- | --- | --- |
+| **Naive RAG** | Basic RAG: embed → retrieve → answer. | Simple apps, prototypes, small datasets. | Easy to build; fast; low cost. | Retrieval quality is limited; struggles with vague queries. | **Postgres:** `SELECT content FROM documents ORDER BY embedding <-> $1 LIMIT 5;`<br>**ChromaDB:** `collection.query(query_embeddings=[query_embedding], n_results=5)` |
+
 | **[Hybrid RAG](ca://s?q=Explain_Hybrid_RAG)** | Combines vector search + keyword search (BM25). | When queries need both meaning + exact match. | More accurate; handles rare terms; robust. | Slightly more complex; requires two search systems. |
 | **[HyDE RAG](ca://s?q=Explain_HyDE_RAG)** | LLM generates a hypothetical answer → embed → retrieve. | When queries are short, vague, or unclear. | Big boost in retrieval quality; great for reasoning tasks. | Extra LLM call increases cost + latency. |
 | **[Parent Document Retriever](ca://s?q=Explain_Parent_Document_Retriever)** | Splits docs into chunks but returns the full parent doc. | When context is lost in small chunks. | Preserves full meaning; reduces hallucinations. | Larger context → higher token cost. |
