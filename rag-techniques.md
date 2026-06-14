@@ -6,13 +6,11 @@ vec AS (
     SELECT id, content,
            1 - (embedding <-> $2) AS vector_score
     FROM documents
-),
-kw AS (
+), kw AS (
     SELECT id,
            ts_rank(to_tsvector('english', content), plainto_tsquery($1)) AS keyword_score
     FROM documents
-)
-SELECT
+) SELECT
     d.id,
     d.content,
     (0.6 * vec.vector_score + 0.4 * kw.keyword_score) AS hybrid_score
