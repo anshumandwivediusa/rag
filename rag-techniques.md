@@ -9,7 +9,7 @@
 | **[Rewrite–Retrieve–Read](ca://s?q=Explain_Rewrite_Retrieve_Read)** | LLM rewrites the query → retrieves → answers. | When user queries are unclear or poorly phrased. | Better retrieval; more natural answers. | Extra LLM step adds cost + latency. 
 | **[Unstructured RAG](ca://s?q=Explain_Unstructured_RAG)** | Handles mixed data: PDFs, tables, images, HTML. | Real‑world messy documents. | Works with any document type; flexible. | Requires preprocessing; slower ingestion. 
 
-# **Naive RAG — Postgres + ChromaDB**
+# **Naive RAG — Postgres + ChromaDB** 
 
 ### **PostgreSQL (pgvector)**  
 ```sql
