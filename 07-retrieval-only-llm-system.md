@@ -1,21 +1,17 @@
 # Retrieval-Only LLM System
 
-## 📖 Overview
+## Overview
 This project configures a Large Language Model (LLM) to operate in **retrieval-only mode**.  
 In this setup, the model answers **strictly based on data available in the system** (e.g., a vector database, knowledge base, or document store).  
 If no relevant data is found, the model **refuses to generate speculative answers** and instead returns a controlled fallback response.
 
----
-
-## 🎯 Goals
+## Goals
 - Prevent **hallucinations** by restricting generative reasoning.
 - Ensure all answers are **grounded in retrieved context**.
 - Provide a **consistent fallback message** when no data is available.
 - Allow developers to enforce **confidence thresholds** for retrieval relevance.
 
----
-
-## ⚙️ Architecture
+## Architecture
 The system follows a **Retrieval-Augmented Generation (RAG)** pipeline but with strict restrictions:
 
 1. **[User Query](ca://s?q=User_query_in_RAG)**  
@@ -39,9 +35,7 @@ The system follows a **Retrieval-Augmented Generation (RAG)** pipeline but with 
      No information available in the system.
      ```
 
----
-
-## 🔒 Restriction Strategies
+## Restriction Strategies
 - **System Prompt Enforcement**  
   - Example: *"You must only answer using retrieved data. If none is found, respond with 'No information available.'"*
 
@@ -56,9 +50,7 @@ The system follows a **Retrieval-Augmented Generation (RAG)** pipeline but with 
 - **Custom Refusal Messages**  
   - Standardized fallback prevents inconsistent or misleading outputs.
 
----
-
-## 🛠️ Configuration
+## Configuration
 ### Example Settings
 ```yaml
 retrieval:
