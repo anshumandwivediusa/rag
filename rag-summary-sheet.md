@@ -2,8 +2,6 @@
 
 A concise reference for **Retrieval-Augmented Generation (RAG)** — covering the full pipeline, chunking strategies, embedding models, retrieval methods, reranking, vector databases, advanced patterns, key hyperparameters, evaluation metrics, and common failure modes.
 
----
-
 ## Table of Contents
 
 - [What is RAG?](#what-is-rag)
