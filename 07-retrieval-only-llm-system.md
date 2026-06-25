@@ -36,19 +36,85 @@ The system follows a **Retrieval-Augmented Generation (RAG)** pipeline but with 
      ```
 
 ## Restriction Strategies
-- **System Prompt Enforcement**  
-  - Example: *"You must only answer using retrieved data. If none is found, respond with 'No information available.'"*
 
-- **Guardrails Layer**  
-  - Middleware validates whether the response is grounded in retrieved text.  
-  - Blocks or replaces ungrounded outputs.
+#### 1. System Prompt Enforcement
 
-- **Confidence Thresholds**  
-  - Define a minimum similarity score (e.g., cosine similarity ≥ 0.75).  
-  - Ensures only highly relevant matches are used.
+The system prompt serves as the primary control mechanism for model behavior. It should explicitly instruct the AI to generate responses only from the information retrieved from the approved knowledge base.
 
-- **Custom Refusal Messages**  
-  - Standardized fallback prevents inconsistent or misleading outputs.
+**Example Instruction:**
+
+> "You must answer only using the information provided in the retrieved context. If the required information is not available, respond with: 'No information available.' Do not infer, assume, or generate additional facts."
+
+**Benefits:**
+
+* Reduces hallucinations and unsupported claims.
+* Establishes clear operational boundaries for the model.
+* Ensures consistency across user interactions.
+
+#### 2. Guardrails and Validation Layer
+
+A guardrails layer acts as an intermediary between the retrieval system and the final response generation process. It verifies whether the generated answer is adequately supported by the retrieved content.
+
+**Key Functions:**
+
+* Compare generated responses against retrieved documents.
+* Detect unsupported statements or fabricated information.
+* Block, revise, or replace responses that lack sufficient grounding.
+* Enforce organizational compliance and content policies.
+
+**Benefits:**
+
+* Prevents dissemination of inaccurate information.
+* Enhances trustworthiness and reliability of outputs.
+* Provides an additional layer of governance beyond prompt engineering.
+
+#### 3. Confidence Thresholds
+
+Confidence thresholds ensure that only highly relevant retrieved content is used to generate responses. Retrieval results are evaluated using similarity metrics such as cosine similarity, semantic relevance scores, or reranker confidence scores.
+
+**Example Configuration:**
+
+* Minimum cosine similarity score: **0.75**
+* Minimum reranker confidence score: **80%**
+
+**Operational Logic:**
+
+* If retrieved documents exceed the threshold, proceed with response generation.
+* If no document meets the threshold, trigger a fallback or refusal response.
+
+**Benefits:**
+
+* Improves response accuracy.
+* Reduces the risk of using weakly related or irrelevant content.
+* Enhances overall retrieval quality.
+
+#### 4. Standardized Refusal and Fallback Responses
+
+When the system cannot locate sufficiently relevant information, it should provide a consistent and predefined response instead of attempting to generate an answer.
+
+**Example Responses:**
+
+* "No information available."
+* "The requested information could not be found in the approved knowledge sources."
+* "Insufficient context was retrieved to provide a reliable answer."
+
+**Benefits:**
+
+* Eliminates inconsistent refusal behavior.
+* Prevents misleading or speculative responses.
+* Improves user transparency regarding system limitations.
+
+### Recommended Multi-Layer Protection Approach
+
+For maximum reliability, implement all four controls together:
+
+1. **System Prompt Enforcement** – Defines model behavior.
+2. **Confidence Thresholds** – Filters low-quality retrieval results.
+3. **Guardrails Validation Layer** – Verifies response grounding.
+4. **Standardized Refusal Messages** – Handles cases with insufficient evidence.
+
+This layered approach significantly reduces hallucinations, improves response accuracy, and ensures that all generated outputs remain grounded in verified retrieved content.
+
 
 ## Configuration
 ### Example Settings
