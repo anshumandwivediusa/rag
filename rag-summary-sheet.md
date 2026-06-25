@@ -17,8 +17,6 @@ A concise reference for **Retrieval-Augmented Generation (RAG)** — covering th
 - [Evaluation Metrics](#evaluation-metrics)
 - [Common Failure Modes & Fixes](#common-failure-modes--fixes)
 
----
-
 ## What is RAG?
 
 RAG grounds LLM responses in external knowledge by retrieving relevant documents at query time and injecting them into the prompt. This reduces hallucination, keeps knowledge current without retraining, and provides source attribution.
