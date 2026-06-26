@@ -1,0 +1,86 @@
+# GraphRAG
+
+GraphRAG is an advanced **Retrieval-Augmented Generation (RAG)** framework that integrates **graph-based knowledge representation** into the retrieval process. Unlike standard RAG, which relies on flat top‑k similarity search, GraphRAG retrieves **connected subgraphs** of information, enabling **multi-hop reasoning** and **relationship-aware context assembly**.
+
+
+## Key Features
+
+- **[Graph-based Retrieval](ca://s?q=Graph_based_retrieval)**  
+  Store documents as nodes and relationships in a knowledge graph (Neo4j, TigerGraph, ArangoDB).  
+
+- **[Hybrid Search](ca://s?q=GraphRAG_hybrid_search)**  
+  Combine semantic vector similarity with symbolic graph traversal.  
+
+- **[Multi-hop Reasoning](ca://s?q=GraphRAG_multi_hop_reasoning)**  
+  Follow chains of relationships (e.g., author → paper → citation → topic).  
+
+- **[Context Assembly](ca://s?q=GraphRAG_context_assembly)**  
+  Retrieve not just chunks, but **connected subgraphs** for richer context.  
+
+
+## Architecture
+
+1. **Query Processing**  
+   - Embed query using LLM embeddings.  
+   - Identify relevant nodes/entities.  
+
+2. **Graph Traversal**  
+   - Traverse relationships (citations, authors, topics, metadata).  
+   - Retrieve connected subgraph.  
+
+3. **Context Assembly**  
+   - Merge semantic chunks + graph paths.  
+   - Provide structured context to LLM.  
+
+4. **LLM Response**  
+   - Generate grounded answer using retrieved subgraph.  
+
+
+## Comparison
+
+| Feature | Standard RAG | GraphRAG |
+|------|--------------|----------|
+| Retrieval | Flat top‑k | Graph traversal + embeddings |
+| Context | Independent chunks | Connected subgraph |
+| Reasoning | Single-hop | Multi-hop |
+| Best Use | FAQs, semantic search | Research, enterprise knowledge bases |
+
+
+## Example
+
+**Query**: *“Find all papers authored by Alice in 2021 that cite Bob’s work on neural networks.”*
+
+- **Standard RAG** → Retrieves papers mentioning Alice + Bob separately.  
+- **GraphRAG** → Traverses graph:  
+  - Node: Alice → Papers (2021) → Citations → Bob → Topic: Neural Networks.  
+  - Returns exact set of relevant papers with relational context.  
+
+
+## Tech Stack
+
+- **Graph Database**: Neo4j, TigerGraph, ArangoDB  
+- **Vector Database**: Milvus, Pinecone, Weaviate  
+- **LLM Integration**: Claude, GPT, Grok  
+- **Middleware**: LangChain, LlamaIndex  
+
+
+## Use Cases
+
+- **[Academic Research](ca://s?q=GraphRAG_for_research)** → Multi-hop queries across citations.  
+- **[Enterprise Knowledge Bases](ca://s?q=GraphRAG_enterprise_use)** → Policy → Section → Clause retrieval.  
+- **[Legal Reasoning](ca://s?q=GraphRAG_legal_reasoning)** → Case law relationships.  
+- **[Scientific Literature](ca://s?q=GraphRAG_scientific_use)** → Topic → Paper → Author → Institution chains.  
+
+
+## Getting Started
+
+1. Build or import a **knowledge graph**.  
+2. Connect a **vector DB** for semantic embeddings.  
+3. Implement **hybrid retrieval** (graph traversal + embeddings).  
+4. Pass retrieved **subgraph context** into your LLM.  
+
+
+## Takeaway
+
+GraphRAG is **RAG 2.0** — it doesn’t just retrieve chunks, it retrieves **connected knowledge paths**. Perfect for **complex reasoning, enterprise AI, and research assistants**.
+
