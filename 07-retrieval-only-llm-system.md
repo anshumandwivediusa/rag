@@ -305,6 +305,8 @@ Different confidence levels can trigger different behaviors.
 | 0.60 – 0.75 | Ask clarifying question |
 | < 0.60      | Refuse answer           |
 
+
+
 #### Example
 
 ```python
@@ -337,3 +339,384 @@ Fallback Response: Standardized
 ```
 
 This combination provides much better protection against hallucinations than relying on prompts alone because the system filters weak retrieval results before the LLM generates a response.
+
+## **ChromaDB**, implementing **Relevance** and **Confidence**
+For **ChromaDB**, implementing **Relevance** and **Confidence** are two separate concerns:
+
+* **Relevance** is handled by **ChromaDB** during retrieval.
+* **Confidence** is **not provided by ChromaDB**. You must implement it yourself using guardrails, LLM evaluation, or grounding verification.
+
+
+
+### Overall Architecture
+
+```text
+                 User Query
+                      │
+                      ▼
+              Generate Embedding
+                      │
+                      ▼
+                 ChromaDB Search
+                      │
+         Similarity Score (Relevance)
+                      │
+      ┌───────────────┴───────────────┐
+      │                               │
+ Score >= Threshold?             Score < Threshold
+      │                               │
+      ▼                               ▼
+   Send Context                 Return "No Information"
+      │
+      ▼
+      LLM Generates Answer
+      │
+      ▼
+ Grounding Verification (Confidence)
+      │
+      ├── Supported → Return Answer
+      └── Unsupported → Regenerate / Refuse
+```
+
+
+
+### Step 1. Implement Relevance in ChromaDB
+
+When querying ChromaDB:
+
+```python
+results = collection.query(
+    query_texts=["What is RAG?"],
+    n_results=5
+)
+```
+
+If using LangChain:
+
+```python
+docs = vectorstore.similarity_search_with_score(
+    query,
+    k=5
+)
+```
+
+Example output:
+
+```python
+[
+(Document(...), 0.18),
+(Document(...), 0.24),
+(Document(...), 0.71)
+]
+```
+
+> **Note:** Depending on the embedding function and API, Chroma may return **distance** rather than **similarity**. Lower distance usually means a better match. If you're using cosine distance:
+>
+> * **0.0** = perfect match
+> * Larger values = less similar
+
+Always check whether your configuration returns **distance** or **similarity** before setting thresholds.
+
+
+
+#### Example Relevance Threshold
+
+If using cosine distance:
+
+```python
+MAX_DISTANCE = 0.30
+
+relevant_docs = [
+    doc
+    for doc, distance in docs
+    if distance <= MAX_DISTANCE
+]
+```
+
+If no documents pass:
+
+```python
+return "No information available."
+```
+
+This is your **Relevance Guardrail**.
+
+
+
+### Step 2. Context Compression
+
+Suppose Chroma returns:
+
+```
+Chunk 1
+Chunk 2
+Chunk 3
+Chunk 4
+Chunk 5
+```
+
+Some chunks may be redundant.
+
+Compress:
+
+```
+Chunk 1
+Chunk 3
+Chunk 5
+```
+
+This reduces tokens and improves answer quality.
+
+LangChain provides:
+
+```python
+ContextualCompressionRetriever
+```
+
+
+
+### Step 3. Generate the Answer
+
+Prompt:
+
+```text
+Answer ONLY from the supplied context.
+
+If the answer cannot be found,
+
+reply:
+
+"No information available."
+
+Never make assumptions.
+```
+
+
+
+### Step 4. Confidence Check (Grounding)
+
+Now verify the answer.
+
+Suppose:
+
+Context:
+
+```
+Refund period = 30 days.
+```
+
+Generated:
+
+```
+Refund period = 45 days.
+```
+
+This should fail.
+
+
+
+#### Method 1 (Recommended): LLM-as-a-Judge
+
+Call the LLM again:
+
+```text
+Context:
+
+<retrieved documents>
+
+Answer:
+
+<generated answer>
+
+Question:
+
+Is every factual statement in the answer supported by the context?
+
+Return JSON:
+
+{
+ "supported": true,
+ "confidence": 0.92,
+ "unsupported_claims":[]
+}
+```
+
+Example output:
+
+```json
+{
+ "supported": false,
+ "confidence": 0.31,
+ "unsupported_claims":[
+   "Refund period is 45 days"
+ ]
+}
+```
+
+Now reject the answer.
+
+
+
+### Step 5. Confidence Threshold
+
+```python
+if confidence < 0.80:
+    regenerate()
+```
+
+or
+
+```python
+return "The retrieved information is insufficient to answer this question."
+```
+
+
+
+### Step 6. Citation Check
+
+Every statement should originate from one of the retrieved chunks.
+
+Good:
+
+```
+Refund period: 30 days
+
+Source:
+EmployeePolicy.pdf
+Section 4.2
+```
+
+Bad:
+
+```
+Refund period: 45 days
+```
+
+No supporting chunk.
+
+Reject.
+
+
+
+### Step 7. Policy Guardrails
+
+Run:
+
+* PII detection
+* Toxicity detection
+* Company policy validation
+
+Example:
+
+```
+Employee SSN:
+
+123-45-6789
+```
+
+↓
+
+```
+Employee SSN:
+
+***-**-6789
+```
+
+
+
+### Complete Flow
+
+```python
+query = "What is the refund policy?"
+
+# Retrieve
+docs = chroma.similarity_search_with_score(query)
+
+# Relevance Guardrail
+relevant_docs = [
+    doc
+    for doc, distance in docs
+    if distance < 0.30
+]
+
+if len(relevant_docs) == 0:
+    return "No information available."
+
+# Generate
+answer = llm.generate(query, relevant_docs)
+
+# Confidence Guardrail
+evaluation = judge_llm(
+    answer=answer,
+    context=relevant_docs
+)
+
+if not evaluation.supported:
+    return "The retrieved information does not fully support an answer."
+
+return answer
+```
+
+
+
+### Production Pipeline
+
+```text
+User Question
+      │
+      ▼
+Embedding
+      │
+      ▼
+ChromaDB
+      │
+      ▼
+Similarity Score
+      │
+      ▼
+Relevance Threshold
+      │
+      ▼
+Metadata Filter
+      │
+      ▼
+Context Compression
+      │
+      ▼
+LLM
+      │
+      ▼
+Grounding Verification
+      │
+      ▼
+Citation Validation
+      │
+      ▼
+Policy Check
+      │
+      ▼
+Confidence Score
+      │
+      ▼
+Approve / Reject
+      │
+      ▼
+Final Answer
+```
+
+#### Enterprise Best Practice
+
+For a production RAG system using **ChromaDB + LangChain**, a robust implementation typically includes:
+
+| Stage                | Implementation                                                                    |
+| -------------------- | --------------------------------------------------------------------------------- |
+| Retrieval            | `Chroma.similarity_search_with_score()` or `as_retriever()`                       |
+| Relevance            | Distance/similarity threshold + metadata filters                                  |
+| Retrieval Quality    | Re-ranking (e.g., CrossEncoder, Cohere Rerank, BGE Reranker)                      |
+| Context Optimization | `ContextualCompressionRetriever`                                                  |
+| Generation           | Prompt instructing the LLM to answer only from retrieved context                  |
+| Confidence           | LLM-as-a-Judge or a groundedness checker to verify support for the answer         |
+| Safety               | PII redaction, toxicity checks, and organizational policy enforcement             |
+| Fallback             | Return a standardized message when relevance or confidence thresholds are not met |
+
+**Key point:** ChromaDB's responsibility ends at **retrieving relevant documents**. It does **not** determine whether the generated answer is correct. That confidence check is part of the guardrails layer you build around your RAG application.
