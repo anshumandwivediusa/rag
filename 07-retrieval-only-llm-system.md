@@ -346,8 +346,13 @@ For **ChromaDB**, implementing **Relevance** and **Confidence** are two separate
 * **Relevance** is handled by **ChromaDB** during retrieval.
 * **Confidence** is **not provided by ChromaDB**. You must implement it yourself using guardrails, LLM evaluation, or grounding verification.
 
-
-
+| **Aspect** | **Similarity** | **Confidence** | **Relevance** |
+| --- | --- | --- | --- |
+| **Signal type** | Numeric vector closeness | Retriever’s trust in similarity | Semantic fit to query intent |
+| **Computed by** | Embedding math | Ranking top‑N by similarity | Cross‑encoder, LLM, heuristics |
+| **Strength** | Objective, fast | Easy to use for retrieval | Accurate, context‑aware |
+| **Weakness** | Ignores meaning | Can be fooled by overlap | Slower, more compute |
+| **Best use** | Raw scoring | Candidate selection | Final reranking & grounding |
 ### Overall Architecture
 
 ```text
